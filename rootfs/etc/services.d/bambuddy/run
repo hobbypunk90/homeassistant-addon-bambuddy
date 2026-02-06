@@ -1,0 +1,19 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the example service
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+# Add your code here
+
+bashio::log.info 'Link data dir'
+mkdir -p /data/data
+mkdir -p /data/logs
+
+ln -s /data/data /app/data
+ln -s /data/logs /app/logs
+
+cd /app
+
+bashio::log.info 'Start Bambuddy ...'
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
