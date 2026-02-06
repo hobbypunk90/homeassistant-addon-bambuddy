@@ -22,5 +22,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY --from=builder /app /app
 
+ENV PYTHONUNBUFFERED=1
+ENV DATA_DIR=/app/data
+ENV LOG_DIR=/app/logs
+
 # Copy root filesystem
 COPY rootfs /
