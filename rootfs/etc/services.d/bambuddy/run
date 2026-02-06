@@ -9,7 +9,8 @@
 bashio::log.info 'Link data dir'
 mkdir -p /data/data
 mkdir -p /data/logs
-
+rm -r /app/data
+rm -r /app/logs
 ln -s /data/data /app/data
 ln -s /data/logs /app/logs
 
