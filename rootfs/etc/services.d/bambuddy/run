@@ -5,9 +5,8 @@
 # ==============================================================================
 
 # Add your code here
-declare DEBUG
-DEBUG=$(bashio::config 'debug')
-
+declare debug
+debug=$(bashio::config 'debug')
 
 bashio::log.info 'Link data dir'
 mkdir -p /data/data
@@ -18,6 +17,11 @@ ln -s /data/data /app/data
 ln -s /data/logs /app/logs
 
 cd /app
+
+if [ "${debug}" = "true" ]; then
+  bashio::log.info 'Enabling debug mode'
+  export DEBUG=true
+fi
 
 bashio::log.info 'Start Bambuddy ...'
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
