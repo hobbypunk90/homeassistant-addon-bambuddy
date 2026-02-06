@@ -5,6 +5,9 @@
 # ==============================================================================
 
 # Add your code here
+declare DEBUG
+DEBUG=$(bashio::config 'debug')
+
 
 bashio::log.info 'Link data dir'
 mkdir -p /data/data
