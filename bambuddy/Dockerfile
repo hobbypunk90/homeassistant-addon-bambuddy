@@ -1,9 +1,16 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
-ARG BAMBUDDY_VERSION
-ARG BUILD_FROM
+ARG BAMBUDDY_VERSION="0.2.4.1"
+ARG BUILD_ARCH
+ARG BUILD_FROM="ghcr.io/home-assistant/${BUILD_ARCH}-base-python:3.14-alpine3.23"
 
 FROM ghcr.io/maziggy/bambuddy:${BAMBUDDY_VERSION} as builder
 FROM $BUILD_FROM
+
+LABEL \
+  org.opencontainers.image.title="Home Assistant Add-on: Bambuddy add-on" \
+  org.opencontainers.image.description="A powerful, self-hosted print archive and management system for Bambu Lab 3D printers." \
+  org.opencontainers.image.source="https://github.com/connormxy/homeassistant-addon-bambuddy" \
+  org.opencontainers.image.licenses="MIT License"
 
 WORKDIR /app
 
