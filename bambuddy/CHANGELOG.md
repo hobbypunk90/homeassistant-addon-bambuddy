@@ -5,7 +5,9 @@
 All notable changes to the App will be documented in this file.
 ## [0.2.4.1-4] - 2026-05-17
 
-- **Build**: Migrated deprecated `build.yaml` options (ORCA_VERSION, BAMBU_VERSION, BASE_IMAGE) to Dockerfile `ARG` directives.
+- **Build**: Migrated deprecated `build.yaml` options to Dockerfile `ARG` directives.
+- **Fix**: Replaced broken `py3-opencv` + `sed` workaround with HA's precompiled musllinux wheels for `opencv-python-headless`, fixing empty plate detection.
+- **Fix**: Corrected `HA_URL` supervisor path to `http://supervisor/core` (Bambuddy appends its own `/api/` path).
 
 ## [0.2.4.1-3] - 2026-05-16
 

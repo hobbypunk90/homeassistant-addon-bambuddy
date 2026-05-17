@@ -15,17 +15,28 @@ LABEL \
 WORKDIR /app
 
 # Install system dependencies
+# NOTE: py3-opencv is NOT used — it installs cv2 into Alpine's system Python,
+# but HA's Python lives in /usr/local and never sees it. Instead we pip-install
+# opencv-python-headless from HA's precompiled musllinux wheels below.
 RUN apk add --no-cache \
   build-base \
-  py3-opencv \
   curl \
-  ffmpeg
+  ffmpeg \
+  libstdc++ \
+  libjpeg-turbo \
+  libpng \
+  tiff \
+  libwebp
 
 # Install Python dependencies with cache mount
+# --find-links pulls prebuilt musllinux wheels (including opencv-python-headless)
+# from Home Assistant's wheel server so nothing compiles from source.
 COPY --from=builder /app/requirements.txt ./
-RUN sed -i 's/opencv-python-headless/# opencv-python-headless/' /app/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-  pip install --root-user-action=ignore -r requirements.txt
+  pip install --root-user-action=ignore --upgrade pip \
+  && pip install --root-user-action=ignore \
+     --find-links https://wheels.home-assistant.io/musllinux/ \
+     -r requirements.txt
 
 COPY --from=builder /app /app
 

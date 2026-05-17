@@ -93,7 +93,7 @@ fi
 bashio::log.info 'Synchronizing settings to database...'
 python3 /app/scripts/init_settings.py
 
-export HA_URL="http://supervisor/core/api/"
+export HA_URL="http://supervisor/core"
 export HA_TOKEN="${SUPERVISOR_TOKEN}"
 
 bashio::log.info 'Start Bambuddy ...'
