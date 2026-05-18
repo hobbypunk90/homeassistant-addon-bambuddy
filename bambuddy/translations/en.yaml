@@ -1,6 +1,46 @@
 configuration:
   debug:
-    name: Debug
-    description: Flag to enable debug messages
-network:
-  8000/tcp: Web Interface
+    name: "Debug Logging"
+    description: "Enable verbose logs for troubleshooting."
+  orcaslicer_api_url:
+    name: "OrcaSlicer API URL"
+    description: "Orca Sidecar URL and port (default http://127.0.0.1:3003 on host mode)."
+  bambu_studio_api_url:
+    name: "Bambu Studio API URL"
+    description: "Bambu Sidecar URL and port (default http://127.0.0.1:3001 on host mode)."
+  preferred_slicer:
+    name: "Preferred Slicer"
+    description: "Select primary headless slicer. See Bambuddy docs for more info regarding current OrcaSlicer incompatibility with 3mf sliced in Bambu slicer."
+  mfa_encryption_key:
+    name: "MFA Encryption Key"
+    description: "Optional key to encrypt MFA credentials."
+  database_url:
+    name: "External Database URL"
+    description: "Optional PostgreSQL URL to replace local SQLite in /share/bambuddy/ and connect to an external server."
+  virtual_printer_pasv_address:
+    name: "Virtual Printer Passive IP"
+    description: "Optional FTP passive IP for complex NAT setups. Leave empty to auto-detect."
+  obico_ml_url:
+    name: "Obico ML Server URL"
+    description: "Self-hosted AI failure detection server URL (default http://127.0.0.1:3333 on host mode)."
+  mqtt_enabled:
+    name: "Enable MQTT Relay"
+    description: "Toggle MQTT output; leave blank for auto-discovery. Can edit settings within Bambuddy after startup."
+  mqtt_broker:
+    name: "MQTT Broker Address"
+    description: "Host of your MQTT broker. Automatically provided by HAOS Supervisor if using the local MQTT service (e.g., from the core Mosquitto Home Assistant App) if left blank."
+  mqtt_port:
+    name: "MQTT Broker Port"
+    description: "Connection port for your MQTT broker. Typically 1883 (unencrypted) or 8883 (encrypted). Auto-discovered if left blank."
+  mqtt_username:
+    name: "MQTT Username"
+    description: "Username for MQTT broker authentication. Auto-discovered if left blank."
+  mqtt_password:
+    name: "MQTT Password"
+    description: "Broker password; auto-discovered if blank."
+  mqtt_topic_prefix:
+    name: "MQTT Topic Prefix"
+    description: "Root topic for relaying all printer status events; defaults to 'bambuddy' if left blank."
+  mqtt_use_tls:
+    name: "MQTT TLS/SSL"
+    description: "Use encrypted TLS connection for MQTT; auto-discovered if left blank."

@@ -4,6 +4,13 @@
 
 All notable changes to the App will be documented in this file.
 
+## [0.2.4.1-9.1] - 2026-05-18
+
+### Documentation & UI
+- **Config hint text**: Added `translations/en.yaml` — all add-on configuration fields now display human-readable names and concise descriptions in the Home Assistant UI.
+- **Port conflict docs**: Expanded port conflict notes in `DOCS.md` for Z-Wave JS, Mosquitto TLS, and FTPS passive data ports.
+- **German translation**: Removed placeholder German translation file; pending any localization updates.
+
 ## [0.2.4.1-9] - 2026-05-17
 
 ### Build & Install Optimizations
