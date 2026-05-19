@@ -4,6 +4,9 @@
 
 All notable changes to the App will be documented in this file.
 
+## [0.2.4.1-0.2.1] - 2026-05-19
+- **Fix**: Resolved an encoding bug in the patch files that caused the Docker build process to fail on Home Assistant.
+
 ## [0.2.4.1-0.2] - 2026-05-19
 
 *(Note: Version number has been rolled over from `-9.1` in preparation for an impending restructuring of the development workflow.)*
