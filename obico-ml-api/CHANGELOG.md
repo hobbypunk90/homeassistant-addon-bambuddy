@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.4-0.1.2
+- **First Stable Release**
 - Added `draw_bounding_boxes` configuration toggle to allow users to disable AI bounding boxes in snapshots if desired.
 
 ## 1.4-0.1
