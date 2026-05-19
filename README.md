@@ -22,14 +22,15 @@ A self-hosted print archive and management system for Bambu Lab 3D printers.
 
 This repository delivers a **multi-app ecosystem** for running Bambuddy on Home Assistant OS with minimal setup:
 
-### 🧩 Three Installable Add-ons
+### 🧩 Four Installable Add-ons
 | Add-on | Port | Purpose |
 |--------|------|---------|
 | **Bambuddy** | 8000 | Core application — printer monitoring, archive, queue, notifications |
 | **Slicer API (Bambu Studio)** | 3001 | Optional headless slicing sidecar for Bambu Studio files |
 | **Slicer API (OrcaSlicer)** | 3003 | Optional headless slicing sidecar for OrcaSlicer files |
+| **Obico ML API** | 3333 | Optional headless ML sidecar for AI failure detection |
 
-Install the main add-on **and** at least one Slicer API to enable auto-slicing features.
+Install the main add-on **and** any optional sidecars you need.
 
 ### 🔌 Zero-Config Home Assistant Integration
 - **API connectivity** is automatic — the Supervisor injects the HA URL and token at startup, enabling HA notifications (including 2024.6+ `notify.send_message` entities) with no manual setup.
@@ -42,13 +43,19 @@ The Docker image uses a **Python 3.11 base** specifically tailored to match Home
 - Empty plate detection works out of the box
 
 ### 🤖 AI Failure Detection (Obico ML)
-Bambuddy can monitor your print's camera feed in real-time and detect failures (spaghetti, layer shifts, etc.) via a self-hosted [Obico ML server](https://github.com/TheSpaghettiDetective/obico-server). Set `obico_ml_url` in the add-on config (typically `http://127.0.0.1:3333`).
+Bambuddy can monitor your print's camera feed in real-time and detect failures (spaghetti, layer shifts, etc.) via a self-hosted Obico ML server. To enable this, simply install the **Obico ML API** add-on provided in this repository alongside Bambuddy. *(Note: The Obico ML add-on is heavily based on the excellent work by [nobodyguy](https://github.com/nobodyguy/obico_ml_ha_addon)).*
 
 > **Note:** This is useful for **all** Bambu printers. While some models (X1C, P1S) have built-in lidar for first-layer inspection, continuous AI print monitoring is a Bambu Cloud feature that is **not available in developer/LAN mode**. Obico ML fills that gap locally.
 
-Community options for running the ML server on Home Assistant:
-- [**Obico ML HA Add-on**](https://github.com/nobodyguy/obico_ml_ha_addon) — runs the Obico ML API as a Home Assistant add-on (port 3333)
-- [**P1S Spaghetti Detection**](https://github.com/nberktumer/ha-bambu-lab-p1-spaghetti-detection) — HA integration + automation blueprint for Bambu printers with Obico ML
+The included **Obico ML API** add-on exposes a customized endpoint (`/detect/`) that automatically draws visual bounding boxes around detected failures, passing them directly into Bambuddy's Home Assistant push notifications so you can easily see what went wrong.
+
+**Smart Chamber Light Automations:**
+This Home Assistant Add-on wrapper enhances Bambuddy by injecting three MQTT **auto-discovery binary sensors** for the Obico ML integration. They will automatically appear under your printer's MQTT device in HA, allowing you to build clean automations (like controlling chamber lights) without worrying about strobe effects during print pauses:
+- `binary_sensor.bambuddy_<serial>_obico_active`: ON ONLY while actively checking photos (turns off immediately when paused).
+- `binary_sensor.bambuddy_<serial>_obico_failed`: ON ONLY if a spaghetti failure is currently latched (stays true during the pause, clears on resume).
+- `binary_sensor.bambuddy_<serial>_obico_monitoring`: ON if Obico is active OR a failure is latched.
+
+Use the unified `obico_monitoring` sensor as a single condition (`state == 'on'`) to seamlessly keep your lights on while the printer runs, and *stay on* while investigating a failure.
 
 ### 🔧 Configurable Slicer Endpoints
 Default slicer URLs point to `http://127.0.0.1:3001` / `:3003` for the co-located sidecars. Override in the add-on config to point at remote slicer instances if needed.

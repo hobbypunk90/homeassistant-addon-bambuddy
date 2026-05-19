@@ -44,21 +44,17 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY --from=builder /app /app
 
 # Patch notification_service.py to support HA 2024.6 notify entities
-RUN python3 -c "import re; \
-path = '/app/backend/app/services/notification_service.py'; \
-content = open(path).read(); \
-patch = '''\n\
-        payload = {\n\
-            \"title\": title,\n\
-            \"message\": message,\n\
-        }\n\
-        if service and service.startswith(\"notify.\"):\n\
-            payload[\"entity_id\"] = service\n\
-            endpoint = \"api/services/notify/send_message\"\n\
-            url = f\"{ha_url.rstrip('/')}/{endpoint}\"\n\
-'''; \
-content = re.sub(r'\s*payload = \{\s*\"title\": title,\s*\"message\": message,\s*\}', patch, content); \
-open(path, 'w').write(content)"
+COPY notification_service.patch /app/notification_service.patch
+RUN patch -p1 -d /app < /app/notification_service.patch && rm /app/notification_service.patch
+
+# Patch Obico ML detection logic to support rich bounding box notifications
+COPY obico_bounding_box.patch /app/obico_bounding_box.patch
+RUN patch -p1 -d /app < /app/obico_bounding_box.patch && rm /app/obico_bounding_box.patch
+
+# Patch Obico MQTT payload and resilient monitoring states
+COPY obico_monitoring_mqtt.patch /app/obico_monitoring_mqtt.patch
+RUN patch -p1 -d /app < /app/obico_monitoring_mqtt.patch && rm /app/obico_monitoring_mqtt.patch
+
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 ENV LOG_DIR=/app/logs

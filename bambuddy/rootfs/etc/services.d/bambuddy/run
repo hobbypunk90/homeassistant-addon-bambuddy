@@ -22,12 +22,20 @@ if [ "${debug}" = "true" ]; then
 fi
 
 if bashio::config.has_value 'orcaslicer_api_url'; then
-  export SLICER_API_URL=$(bashio::config 'orcaslicer_api_url')
+  url=$(bashio::config 'orcaslicer_api_url')
+  if [[ ! "$url" =~ ^https?:// ]]; then
+    url="http://$url"
+  fi
+  export SLICER_API_URL="$url"
   bashio::log.info "OrcaSlicer API URL set to: ${SLICER_API_URL}"
 fi
 
 if bashio::config.has_value 'bambu_studio_api_url'; then
-  export BAMBU_STUDIO_API_URL=$(bashio::config 'bambu_studio_api_url')
+  url=$(bashio::config 'bambu_studio_api_url')
+  if [[ ! "$url" =~ ^https?:// ]]; then
+    url="http://$url"
+  fi
+  export BAMBU_STUDIO_API_URL="$url"
   bashio::log.info "Bambu Studio API URL set to: ${BAMBU_STUDIO_API_URL}"
 fi
 
@@ -55,7 +63,9 @@ if bashio::config.has_value 'mqtt_enabled'; then
   export MQTT_ENABLED=$(bashio::config 'mqtt_enabled')
 fi
 if bashio::config.has_value 'mqtt_broker'; then
-  export MQTT_BROKER=$(bashio::config 'mqtt_broker')
+  broker=$(bashio::config 'mqtt_broker')
+  broker=$(echo "$broker" | sed -E 's|^.*://||; s|:[0-9]+$||')
+  export MQTT_BROKER="$broker"
 fi
 if bashio::config.has_value 'mqtt_port'; then
   export MQTT_PORT=$(bashio::config 'mqtt_port')
@@ -96,7 +106,11 @@ if bashio::config.has_value 'virtual_printer_pasv_address'; then
 fi
 
 if bashio::config.has_value 'obico_ml_url'; then
-  export OBICO_ML_URL=$(bashio::config 'obico_ml_url')
+  url=$(bashio::config 'obico_ml_url')
+  if [[ ! "$url" =~ ^https?:// ]]; then
+    url="http://$url"
+  fi
+  export OBICO_ML_URL="$url"
   bashio::log.info "Obico ML URL set to: ${OBICO_ML_URL}"
 fi
 

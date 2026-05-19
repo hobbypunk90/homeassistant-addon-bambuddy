@@ -4,10 +4,10 @@ configuration:
     description: "Enable verbose logs for troubleshooting."
   orcaslicer_api_url:
     name: "OrcaSlicer API URL"
-    description: "Orca Sidecar URL and port (default http://127.0.0.1:3003 on host mode)."
+    description: "Orca Sidecar URL and port. Must include http:// or https:// (default http://127.0.0.1:3003)."
   bambu_studio_api_url:
     name: "Bambu Studio API URL"
-    description: "Bambu Sidecar URL and port (default http://127.0.0.1:3001 on host mode)."
+    description: "Bambu Sidecar URL and port. Must include http:// or https:// (default http://127.0.0.1:3001)."
   preferred_slicer:
     name: "Preferred Slicer"
     description: "Select primary headless slicer. See Bambuddy docs for more info regarding current OrcaSlicer incompatibility with 3mf sliced in Bambu slicer."
@@ -22,13 +22,13 @@ configuration:
     description: "Optional FTP passive IP for complex NAT setups. Leave empty to auto-detect."
   obico_ml_url:
     name: "Obico ML Server URL"
-    description: "Self-hosted AI failure detection server URL (default http://127.0.0.1:3333 on host mode)."
+    description: "Self-hosted AI failure detection server URL. Must include http:// or https:// (default http://127.0.0.1:3333)."
   mqtt_enabled:
     name: "Enable MQTT Relay"
     description: "Toggle MQTT output; leave blank for auto-discovery. Can edit settings within Bambuddy after startup."
   mqtt_broker:
     name: "MQTT Broker Address"
-    description: "Host of your MQTT broker. Automatically provided by HAOS Supervisor if using the local MQTT service (e.g., from the core Mosquitto Home Assistant App) if left blank."
+    description: "Host of your MQTT broker without protocol or port (e.g., 192.168.1.100). Do NOT include mqtt:// or http://. Automatically provided by HAOS Supervisor if left blank."
   mqtt_port:
     name: "MQTT Broker Port"
     description: "Connection port for your MQTT broker. Typically 1883 (unencrypted) or 8883 (encrypted). Auto-discovered if left blank."
