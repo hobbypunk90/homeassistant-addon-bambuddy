@@ -1,4 +1,4 @@
-#Dev Branch
+# Dev Branch
 
 <p align="center">
   <img src="https://github.com/connormxy/homeassistant-addon-bambuddy/blob/main/bambuddy/logo.png?raw=true" alt="Bambuddy Logo" width="300">
