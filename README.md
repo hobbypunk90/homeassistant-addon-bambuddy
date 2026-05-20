@@ -20,7 +20,7 @@ A self-hosted print archive and management system for Bambu Lab 3D printers, wit
 
 **Dev Branch:** [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fconnormxy%2Fhomeassistant-addon-bambuddy#dev)
 
-## What This App Provides
+## What This App Repository Provides
 
 This repository delivers a **multi-app ecosystem** for running Bambuddy on Home Assistant OS with minimal setup:
 
