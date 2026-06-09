@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4-0.1.3
+- **Bugfix**: Fixed a `Permission denied` (exit code 126) error that prevented the add-on from starting by ensuring `s6-overlay` startup scripts are properly marked as executable.
+
 ## 1.4-0.1.2
 - **First Stable Release**
 - Added `draw_bounding_boxes` configuration toggle to allow users to disable AI bounding boxes in snapshots if desired.
