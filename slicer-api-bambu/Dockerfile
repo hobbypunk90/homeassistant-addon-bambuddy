@@ -1,15 +1,28 @@
-FROM node:24-bookworm AS build
+FROM node:22-bookworm AS build
 
-ARG BAMBU_VERSION=02.06.00.51
+ARG BAMBU_VERSION=02.07.01.57
+ARG TARGETARCH
 
 WORKDIR /app
 
 # Clone the actual source code from the bambuddy/profile-resolver branch
 RUN git clone -b bambuddy/profile-resolver https://github.com/maziggy/orca-slicer-api.git .
 
-RUN echo "Downloading BambuStudio v${BAMBU_VERSION}..."; \
-    curl -fL -o bambu.AppImage \
-        "https://github.com/bambulab/BambuStudio/releases/download/v${BAMBU_VERSION}/Bambu_Studio_linux_fedora-v${BAMBU_VERSION}.AppImage"; \
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        echo "ARM64 not supported — BambuStudio has no official ARM64 AppImage."; \
+        exit 1; \
+    fi; \
+    echo "Resolving BambuStudio v${BAMBU_VERSION} Ubuntu 22.04 AppImage URL..."; \
+    BAMBU_URL=$(curl -fsSL "https://api.github.com/repos/bambulab/BambuStudio/releases/tags/v${BAMBU_VERSION}" \
+        | grep -oE 'https://[^"]*BambuStudio_ubuntu-?22\.04[^"]*\.AppImage' \
+        | head -1); \
+    if [ -z "$BAMBU_URL" ]; then \
+        echo "ERROR: No Ubuntu 22.04 AppImage asset found in BambuStudio v${BAMBU_VERSION}." >&2; \
+        echo "Check that the release exists and ships the ubuntu-22.04 variant." >&2; \
+        exit 1; \
+    fi; \
+    echo "Downloading $BAMBU_URL"; \
+    curl -fL -o bambu.AppImage "$BAMBU_URL"; \
     chmod +x bambu.AppImage; \
     ./bambu.AppImage --appimage-extract; \
     rm bambu.AppImage
@@ -17,7 +30,7 @@ RUN echo "Downloading BambuStudio v${BAMBU_VERSION}..."; \
 RUN npm ci
 RUN npm run build
 
-FROM ubuntu:26.04
+FROM ubuntu:22.04
 
 RUN apt-get update \
     && apt-get upgrade -y \
@@ -33,7 +46,7 @@ RUN apt-get update \
        libsm6 libice6 libmspack0 libsoup2.4-1 \
        libgtk-3-0 \
        libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
-       libwebkit2gtk-4.0-37 \
+       libwebkit2gtk-4.1-0 \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

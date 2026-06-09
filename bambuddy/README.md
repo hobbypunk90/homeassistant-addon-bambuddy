@@ -18,6 +18,15 @@ A self-hosted print archive and management system for Bambu Lab 3D printers.
 
 ## What This Add-on Provides
 
+## ⚠️ Breaking Changes in v0.2.4.5
+If you are upgrading from a previous version, please read the following:
+**⚠️ We strongly recommend creating a full backup before updating, especially if you access your `/share/bambuddy` files from an external device/sync, or if you previously mounted external folders into Bambuddy!**
+
+*   **External Roots**: *ONLY for users already mounting "external folders" within bambuddy (NOT the default `/share/bambuddy` directory).* Upstream Bambuddy now hard-rejects its own data directories and requires explicit enumeration of any external folder the user might wish to mount. To continue using external library folders, you MUST configure the new `bambuddy_external_roots` option (a colon-separated list) in the Home Assistant Add-on config. Follow the specific rules for your external mounts before updating and restarting.
+*   **Storage Overhaul**: The core database (`bambuddy.db`) and internal files have been moved out of the exposed `/share/bambuddy/data` directory and securely into `/addon_configs/bambuddy-dev/data/` (so it remains user-accessible, but is less easily exposed outside the machine via Samba/NAS). User-facing directories (`archive`, `virtual_printer`, `backups`) are now located directly in `/share/bambuddy/` and are natively symlinked. Existing installations will automatically migrate data to this new secure layout on the first start. **Users already accessing the `/share/bambuddy/data/` folder prior to update from external sites must ensure any external shares or syncs will not overwrite the new folder structure.**
+*   **API Access Flags**: Bambuddy will automigrate existing API access flags into the database on the first start.
+*   **MQTT Configuration**: MQTT fields have been removed from the HAOS config tab to prevent configuration conflicts. MQTT is strictly auto-discovered from the Supervisor on the first boot. If you need to manually override the Mosquitto auto-discovery, you must now do so directly inside the Bambuddy web UI (Settings > Integrations > MQTT). Your UI edits will permanently override auto-discovery. Check the settings inside the Bambuddy app for successful auto-configuration.
+
 This is a **Home Assistant wrapper** for the upstream [Bambuddy](https://github.com/maziggy/bambuddy) project. It adds:
 
 - **🔌 Zero-config HA integration** — Supervisor auto-injects API URL and token; HA notifications (including 2024.6+ `notify.send_message` entities) work immediately.

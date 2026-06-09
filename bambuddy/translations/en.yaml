@@ -23,6 +23,9 @@ configuration:
   obico_ml_url:
     name: "Obico ML Server URL"
     description: "Self-hosted AI failure detection server URL. Must include http:// or https:// (default http://127.0.0.1:3333)."
+  bambuddy_external_roots:
+    name: "External Roots Allowlist"
+    description: "Colon-separated list of container paths allowed in File Manager (e.g. /share/nas_drive:/share/external). Do NOT include /share/bambuddy."
   mqtt_enabled:
     name: "Enable MQTT Relay"
     description: "Toggle MQTT output; leave blank for auto-discovery. Can edit settings within Bambuddy after startup."

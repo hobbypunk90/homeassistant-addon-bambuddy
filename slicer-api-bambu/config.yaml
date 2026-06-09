@@ -1,5 +1,5 @@
 name: "Bambuddy Slicer API (Bambu) (DEV)"
-version: "1.1"
+version: "02.07.01.57"
 slug: bambuddy_bambu_studio_api_dev
 stage: experimental
 description: "(DEV) A headless Bambu Studio API sidecar container for Bambuddy Auto-Slicing."

@@ -3,7 +3,6 @@
 A headless Bambu Studio API sidecar container for Bambuddy Auto-Slicing.
 
 This Home Assistant add-on wraps `ghcr.io/maziggy/orca-slicer-api` (bambu variant) so it can be run as a sidecar alongside the Bambuddy add-on.
-
 ## Configuration
 
 1. Start this add-on. Make sure port `3001` is exposed in the network settings.

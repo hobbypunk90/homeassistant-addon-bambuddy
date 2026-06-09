@@ -28,18 +28,11 @@ Because Bambuddy runs in `host_network` mode, it communicates with these sidecar
 ### MQTT Relay Settings
 Bambuddy connects directly to your printer to monitor it, but it can also "Relay" these events (Print Started, Filament Low, etc.) to your Home Assistant MQTT broker so you can build automations around them.
 
-**If you use the official Mosquitto Add-on, MQTT works automatically with no configuration needed.** The add-on auto-discovers broker credentials from the Supervisor at startup.
+**If you use the official Mosquitto Add-on, MQTT works automatically with no configuration needed.** The add-on auto-discovers broker credentials from the Supervisor on first startup.
 
-All MQTT fields are **blank by default** in the add-on config. You only need to fill them in if you want to override auto-discovered values or use a custom broker:
+We have removed the manual MQTT configuration fields from the HAOS Add-on config tab to prevent confusion and bugs. If you need to override the auto-discovered settings (or set up an external broker manually), you must do so from inside the **Bambuddy App Web UI** (`Settings` > `Integrations` > `MQTT`). 
 
-*   **`mqtt_enabled`**: Leave blank for auto-detection, or set explicitly to `true`/`false`.
-*   **`mqtt_broker`**: Auto-detected from Mosquitto if blank. Set to a custom address if using an external broker.
-*   **`mqtt_port`**: Typically `1883`. Auto-detected if blank.
-*   **`mqtt_username`** / **`mqtt_password`**: Auto-detected from Mosquitto if blank. Set manually for external brokers.
-*   **`mqtt_topic_prefix`**: The root topic for events (default in Bambuddy: `bambuddy`).
-*   **`mqtt_use_tls`**: Auto-detected if blank. Toggle for brokers requiring secure connections.
-
-> **Note:** Settings configured in the Bambuddy web UI persist across restarts as long as the corresponding add-on config field is left blank. Filling in an add-on config field will override the web UI value on each restart.
+Any manual edits made inside the Bambuddy App UI will permanently override the HAOS auto-discovery and persist across restarts. To verify your MQTT connection is successful, check the status indicator inside the Bambuddy App settings page.
 
 ### Network Ports (Advanced)
 Because Bambuddy relies on emulating physical Bambu Lab printer hardware to capture print jobs via the "Virtual Printer" feature, it must run in `host_network` mode. This means it binds directly to your Home Assistant host's network interfaces.
@@ -53,11 +46,19 @@ It uses the following ports internally. **If you have other Add-ons using these 
 *   **2021 (UDP)**: Virtual Printer SSDP / mDNS auto-discovery broadcast.
 
 ### Persistent Data & Custom Presets
-The Bambuddy add-on uses Home Assistant's `/share` directory to safely store its database and user data so that it persists across reboots and add-on updates.
+The Bambuddy add-on uses Home Assistant's `/addon_configs` and `/share` directories to safely store its database and user data so that it persists across reboots and add-on updates.
 
-You can access these files via the **Samba Share** add-on or the **File Editor** add-on at:
-*   `/share/bambuddy/data/bambuddy.db` - Your persistent SQLite database containing all print history, stats, and settings.
-*   `/share/bambuddy/logs/` - Diagnostic logs.
+**⚠️ Pre-Update Backup Warning (v0.2.4.5)**: If you are upgrading and you access your `/share/bambuddy` files from an external device/sync, or if you previously mounted external folders into Bambuddy, we strongly recommend creating a full backup before updating!
+
+You can access these files via the **Samba Share** add-on or the **Advanced SSH** add-on at:
+*   `/addon_configs/bambuddy-dev/data/bambuddy.db` - Your persistent SQLite database containing all print history, stats, and settings. This is kept out of the main `share` folder for security.
+*   `/addon_configs/bambuddy-dev/logs/` - Diagnostic logs.
+*   `/share/bambuddy/archive/` - Your user-facing print archives and 3D models.
+*   `/share/bambuddy/backups/` - Auto-generated `.zip` backups of your database.
+
+### External Storage & File Manager
+If you want to use the Bambuddy File Manager to browse other shared folders on your Home Assistant machine (e.g., a NAS mounted to `/share/nas_drive`), you must explicitly allow them:
+*   **`bambuddy_external_roots`**: A colon-separated list of paths the File Manager is allowed to see (e.g., `/share/nas_drive:/share/external_models`). For security, upstream Bambuddy hard-rejects its own data directory, so you **cannot** use `/share/bambuddy` as an external root.
 
 **Importing Custom Presets:**
 To import custom filament or slicing presets into Bambuddy, you do **not** need to manually drop files into the `/share` folder. Simply open the **Bambuddy Web UI**, navigate to the **Presets** or **Library** section, and use the built-in upload/import tools to add your custom `.json` or `.3mf` presets. Because the database is safely mapped to the `/share` folder, your imported profiles will be permanently saved.

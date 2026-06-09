@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: Bambuddy (DEV)
-version: "0.2.4.1-0.2.2"
+version: "0.2.4.5-0.1.0"
 slug: bambuddy-dev
 stage: experimental
 description: "(DEV) Bambuddy is a powerful, self-hosted print archive and management system for Bambu Lab 3D printers."
@@ -25,6 +25,7 @@ options:
   database_url: ""
   virtual_printer_pasv_address: ""
   obico_ml_url: ""
+  bambuddy_external_roots: ""
 schema:
   debug: bool
   orcaslicer_api_url: str?
@@ -33,14 +34,8 @@ schema:
   mfa_encryption_key: password?
   database_url: password?
   virtual_printer_pasv_address: str?
-  mqtt_enabled: bool?
-  mqtt_broker: str?
-  mqtt_port: int(1,65535)?
-  mqtt_username: str?
-  mqtt_password: password?
-  mqtt_topic_prefix: str?
-  mqtt_use_tls: bool?
   obico_ml_url: str?
+  bambuddy_external_roots: str?
 map:
   - addon_config:rw
   - share:rw

@@ -6,13 +6,56 @@
 declare debug
 debug=$(bashio::config 'debug')
 
-bashio::log.info 'Link data dir'
-mkdir -p /share/bambuddy/data
-mkdir -p /share/bambuddy/logs
+bashio::log.info 'Setting up data directories'
+
+mkdir -p /config/data
+mkdir -p /config/logs
+
+mkdir -p /share/bambuddy/archive
+mkdir -p /share/bambuddy/virtual_printer
+mkdir -p /share/bambuddy/backups
+
+if [ -d /share/bambuddy/data ]; then
+  bashio::log.info "Migrating data from old /share/bambuddy/data structure..."
+  
+  if ls /share/bambuddy/data/bambuddy.db* 1> /dev/null 2>&1; then
+    mv /share/bambuddy/data/bambuddy.db* /config/data/ 2>/dev/null || true
+  fi
+  
+  if [ -d /share/bambuddy/data/archive ]; then
+    cp -r /share/bambuddy/data/archive/* /share/bambuddy/archive/ 2>/dev/null || true
+  fi
+  
+  if [ -d /share/bambuddy/data/virtual_printer ]; then
+    cp -r /share/bambuddy/data/virtual_printer/* /share/bambuddy/virtual_printer/ 2>/dev/null || true
+  fi
+  
+  if [ -d /share/bambuddy/data/backups ]; then
+    cp -r /share/bambuddy/data/backups/* /share/bambuddy/backups/ 2>/dev/null || true
+  fi
+  
+  mv /share/bambuddy/data/* /config/data/ 2>/dev/null || true
+  
+  if [ -d /share/bambuddy/logs ]; then
+    mv /share/bambuddy/logs/* /config/logs/ 2>/dev/null || true
+    rm -rf /share/bambuddy/logs
+  fi
+  
+  rm -rf /share/bambuddy/data
+fi
+
+rm -rf /config/data/archive
+rm -rf /config/data/virtual_printer
+rm -rf /config/data/backups
+
+ln -s /share/bambuddy/archive /config/data/archive
+ln -s /share/bambuddy/virtual_printer /config/data/virtual_printer
+ln -s /share/bambuddy/backups /config/data/backups
+
 rm -rf /app/data
 rm -rf /app/logs
-ln -s /share/bambuddy/data /app/data
-ln -s /share/bambuddy/logs /app/logs
+ln -s /config/data /app/data
+ln -s /config/logs /app/logs
 
 cd /app
 
@@ -21,27 +64,31 @@ if [ "${debug}" = "true" ]; then
   export DEBUG=true
 fi
 
-if bashio::config.has_value 'orcaslicer_api_url'; then
-  url=$(bashio::config 'orcaslicer_api_url')
-  if [[ ! "$url" =~ ^https?:// ]]; then
-    url="http://$url"
-  fi
-  export SLICER_API_URL="$url"
-  bashio::log.info "OrcaSlicer API URL set to: ${SLICER_API_URL}"
-fi
-
-if bashio::config.has_value 'bambu_studio_api_url'; then
-  url=$(bashio::config 'bambu_studio_api_url')
-  if [[ ! "$url" =~ ^https?:// ]]; then
-    url="http://$url"
-  fi
-  export BAMBU_STUDIO_API_URL="$url"
-  bashio::log.info "Bambu Studio API URL set to: ${BAMBU_STUDIO_API_URL}"
-fi
-
 if bashio::config.has_value 'preferred_slicer'; then
   export PREFERRED_SLICER=$(bashio::config 'preferred_slicer')
   bashio::log.info "Preferred Slicer set to: ${PREFERRED_SLICER}"
+else
+  export PREFERRED_SLICER="bambu_studio"
+fi
+
+if [ "${PREFERRED_SLICER}" = "orcaslicer" ]; then
+  if bashio::config.has_value 'orcaslicer_api_url'; then
+    url=$(bashio::config 'orcaslicer_api_url')
+    if [[ ! "$url" =~ ^https?:// ]]; then
+      url="http://$url"
+    fi
+    export SLICER_API_URL="$url"
+    bashio::log.info "OrcaSlicer API URL mapped to SLICER_API_URL: ${SLICER_API_URL}"
+  fi
+else
+  if bashio::config.has_value 'bambu_studio_api_url'; then
+    url=$(bashio::config 'bambu_studio_api_url')
+    if [[ ! "$url" =~ ^https?:// ]]; then
+      url="http://$url"
+    fi
+    export SLICER_API_URL="$url"
+    bashio::log.info "Bambu Studio API URL mapped to SLICER_API_URL: ${SLICER_API_URL}"
+  fi
 fi
 
 if bashio::config.has_value 'mfa_encryption_key'; then
@@ -55,48 +102,21 @@ if bashio::config.has_value 'database_url'; then
 fi
 
 # --- MQTT Configuration ---
-# Priority: 1) User add-on config overrides  2) Supervisor auto-discovery  3) Bambuddy UI settings (DB)
-# MQTT config fields are intentionally left blank in options so the Bambuddy UI
-# settings persist across restarts. Only explicitly user-set values override.
+# MQTT configuration is handled either via Home Assistant Supervisor auto-discovery
+# or configured directly within the Bambuddy UI. We no longer rely on add-on config options.
 
-if bashio::config.has_value 'mqtt_enabled'; then
-  export MQTT_ENABLED=$(bashio::config 'mqtt_enabled')
-fi
-if bashio::config.has_value 'mqtt_broker'; then
-  broker=$(bashio::config 'mqtt_broker')
-  broker=$(echo "$broker" | sed -E 's|^.*://||; s|:[0-9]+$||')
-  export MQTT_BROKER="$broker"
-fi
-if bashio::config.has_value 'mqtt_port'; then
-  export MQTT_PORT=$(bashio::config 'mqtt_port')
-fi
-if bashio::config.has_value 'mqtt_username'; then
-  export MQTT_USERNAME=$(bashio::config 'mqtt_username')
-fi
-if bashio::config.has_value 'mqtt_password'; then
-  export MQTT_PASSWORD=$(bashio::config 'mqtt_password')
-fi
-if bashio::config.has_value 'mqtt_use_tls'; then
-  export MQTT_USE_TLS=$(bashio::config 'mqtt_use_tls')
-fi
-if bashio::config.has_value 'mqtt_topic_prefix'; then
-  export MQTT_TOPIC_PREFIX=$(bashio::config 'mqtt_topic_prefix')
-fi
-
-# Auto-discover MQTT from supervisor if no user overrides were set
+# Auto-discover MQTT from supervisor
 if bashio::services.available 'mqtt'; then
-  if [ -z "${MQTT_BROKER}" ]; then
-    bashio::log.info "Auto-discovering MQTT credentials from Home Assistant Supervisor..."
-    export MQTT_ENABLED="true"
-    export MQTT_BROKER=$(bashio::services mqtt "host")
-    export MQTT_PORT=$(bashio::services mqtt "port")
-    export MQTT_USERNAME=$(bashio::services mqtt "username")
-    export MQTT_PASSWORD=$(bashio::services mqtt "password")
-    if [ "$(bashio::services mqtt "ssl")" = "true" ]; then
-      export MQTT_USE_TLS="true"
-    else
-      export MQTT_USE_TLS="false"
-    fi
+  bashio::log.info "Auto-discovering MQTT credentials from Home Assistant Supervisor..."
+  export MQTT_ENABLED="true"
+  export MQTT_BROKER=$(bashio::services mqtt "host")
+  export MQTT_PORT=$(bashio::services mqtt "port")
+  export MQTT_USERNAME=$(bashio::services mqtt "username")
+  export MQTT_PASSWORD=$(bashio::services mqtt "password")
+  if [ "$(bashio::services mqtt "ssl")" = "true" ]; then
+    export MQTT_USE_TLS="true"
+  else
+    export MQTT_USE_TLS="false"
   fi
 fi
 
@@ -112,6 +132,11 @@ if bashio::config.has_value 'obico_ml_url'; then
   fi
   export OBICO_ML_URL="$url"
   bashio::log.info "Obico ML URL set to: ${OBICO_ML_URL}"
+fi
+
+if bashio::config.has_value 'bambuddy_external_roots'; then
+  export BAMBUDDY_EXTERNAL_ROOTS=$(bashio::config 'bambuddy_external_roots')
+  bashio::log.info "External roots allowlist configured: ${BAMBUDDY_EXTERNAL_ROOTS}"
 fi
 
 bashio::log.info 'Synchronizing settings to database...'

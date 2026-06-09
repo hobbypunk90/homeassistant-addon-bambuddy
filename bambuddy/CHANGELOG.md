@@ -4,6 +4,16 @@
 
 All notable changes to the App will be documented in this file.
 
+## [0.2.4.5-0.1.0] - 2026-06-09
+**⚠️ We strongly recommend creating a full backup before updating, especially if you access your `/share/bambuddy` files from an external device/sync, or if you previously mounted external folders into Bambuddy!**
+
+- **Upstream Bump**: Updated base Bambuddy image to `0.2.4.5`.
+- **Breaking Change — Storage Overhaul**: The core database (`bambuddy.db`) and internal files have been moved out of the exposed `/share/bambuddy/data` directory and securely into `/addon_configs/bambuddy-dev/data/` (so it remains user-accessible, but is less easily exposed outside the machine via Samba/NAS). User-facing directories (`archive`, `virtual_printer`, `backups`) are now located directly in `/share/bambuddy/` and are natively symlinked. Existing installations will automatically migrate data to this new secure layout on the first start. **Users already accessing the `/share/bambuddy/data/` folder prior to update from external sites must ensure any external shares or syncs will not overwrite the new folder structure.**
+- **Breaking Change — External Roots**: *ONLY for users already mounting "external folders" within bambuddy (NOT the default `/share/bambuddy` directory).* Upstream Bambuddy now hard-rejects its own data directories and requires explicit enumeration of any external folder the user might wish to mount. To continue using external library folders, you MUST configure the new `bambuddy_external_roots` option (a colon-separated list) in the Home Assistant Add-on config. Follow the specific rules for your external mounts before updating and restarting.
+- **MQTT Zero-Config**: Removed manual MQTT overrides from the HAOS add-on config schema to prevent configuration conflicts. MQTT is strictly auto-discovered from the Supervisor on the first boot. However, any manual edits made inside the Bambuddy App UI will override the auto-discovery and persist on restarts as initially intended. Check the settings inside the Bambuddy app for successful auto-configuration.
+- **API Access Flags Automigration**: When upgrading to 0.2.4.5, Bambuddy will automigrate existing API access flags into the database on the first start.
+- **Slicer Config Logic**: Fixed run script to correctly export `SLICER_API_URL` based on the user's preferred slicer addon configuration, matching upstream requirements.
+- **Obico Patch Fix**: Restored and correctly encoded (UTF-8) the `obico_bounding_box.patch`, `obico_monitoring_mqtt.patch`, and `notification_service.patch` files to prevent 0-byte truncation during Docker build, fully enabling the Obico ML sidecar features.
 ## [0.2.4.1-0.2.2] - 2026-05-19
 - **First Stable Release**
 - **Fix**: Resolved an encoding bug in the patch files that caused the Docker build process to fail on Home Assistant.

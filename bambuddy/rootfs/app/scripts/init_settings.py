@@ -16,6 +16,11 @@ def upsert_setting(cursor, key, value):
     row = cursor.fetchone()
 
     if row:
+        # Don't overwrite MQTT settings if they already exist in the database.
+        # This ensures the user's manual UI overrides survive restarts.
+        if key.startswith("mqtt_"):
+            logger.info(f"Setting {key} already exists in database, skipping override from supervisor")
+            return
         logger.info(f"Updating setting {key}")
         cursor.execute("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?", (str(value), key))
     else:

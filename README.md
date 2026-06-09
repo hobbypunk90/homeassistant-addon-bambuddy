@@ -20,6 +20,10 @@ A self-hosted print archive and management system for Bambu Lab 3D printers, wit
 
 **Dev Branch:** [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fconnormxy%2Fhomeassistant-addon-bambuddy#dev)
 
+## ⚠️ Breaking Changes in v0.2.4.5
+If you are upgrading from a previous version, please read the specific breaking changes in the sub-app documentation:
+*   [Bambuddy Core App Breaking Changes](./bambuddy/README.md) (Storage Overhaul, External Roots, MQTT Configuration)
+
 ## What This App Repository Provides
 
 This repository delivers a **multi-app ecosystem** for running Bambuddy on Home Assistant OS with minimal setup:
@@ -35,10 +39,10 @@ This repository delivers a **multi-app ecosystem** for running Bambuddy on Home 
 Install the main add-on **and** any optional sidecars you need.
 (Also recommended up front is the incredibly fully featured [HA Bambu Lab Integration](greghesp/ha-bambulab) for printer monitoring and control directly within Home Assistant; several additional entities are derived below to complement the printer controls and sensors)
 
-### 🔌 Zero-Config Home Assistant API Access
-- **API connectivity** is automatic — the Supervisor injects the HA URL and token at startup, enabling HA notifications (patched to support 2024.6/2026.5 `notify.send_message` entities and compatible with legacy `notify.mobile_app_*` actions) with no manual setup except entering the `notify.your_device_here` ID of your preferred notification device and selecting Notification preferences in Bambuddy's UI via `Settings` > `Notifications`
-- **MQTT auto-discovery** — If the [Mosquitto add-on](https://github.com/home-assistant/addons/tree/master/mosquitto) is installed, broker credentials are auto-detected from the Supervisor. MQTT just works. You can override any setting in the add-on config tab in HAOS or the Bambuddy web UI in `Settings` > `Network`.
-- **Timezone** is automatically injected by the Supervisor.
+### 🔌 Zero-Config Setup
+- **Home Assistant API**: API connectivity is automatic. The Supervisor injects the necessary tokens at startup. Just configure your notifications in Bambuddy's `Settings` > `Notifications` and you're good to go!
+- **MQTT**: If the [Mosquitto add-on](https://github.com/home-assistant/addons/tree/master/mosquitto) is installed, broker credentials are auto-detected from the Supervisor. It just works—no manual configuration required.
+- **Timezone**: Automatically injected by the Supervisor.
 
 ### ⚙️ Local "One-Click" Slicing from file: Orca and/or Bambu CLI Endpoints
 - **Automatic slicing in browser** – Bambuddy's recent addition of local headless slicing on-demand as of v0.2.4 inspired the compilation of these apps for HAOS installation.
