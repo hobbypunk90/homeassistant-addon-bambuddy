@@ -4,7 +4,7 @@
 
 All notable changes to the App will be documented in this file.
 
-## [0.2.4.5-0.1.1] - 2026-06-09
+## [0.2.4.5-0.1.2] - 2026-06-09
 **⚠️ We strongly recommend creating a full backup before updating, especially if you access your `/share/bambuddy` files from an external device/sync, or if you previously mounted external folders into Bambuddy!**
 
 - **Upstream Bump**: Updated base Bambuddy image to `0.2.4.5`.
@@ -14,6 +14,7 @@ All notable changes to the App will be documented in this file.
 - **API Access Flags Automigration**: When upgrading to 0.2.4.5, Bambuddy will automigrate existing API access flags into the database on the first start.
 - **Slicer Config Logic**: Fixed run script to correctly export `SLICER_API_URL` based on the user's preferred slicer addon configuration, matching upstream requirements.
 - **Obico Patch Fix**: Restored and correctly encoded (UTF-8) the `obico_bounding_box.patch`, `obico_monitoring_mqtt.patch`, and `notification_service.patch` files to prevent 0-byte truncation during Docker build, fully enabling the Obico ML sidecar features. *(Note: Initially bugged at .0, finally actually fixed at .1)*
+- **UI Tweaks**: Hid advanced optional configuration settings (`bambuddy_external_roots`, `database_url`, `mfa_encryption_key`, `virtual_printer_pasv_address`) in the UI by default.
 ## [0.2.4.1-0.2.2] - 2026-05-19
 - **First Stable Release**
 - **Fix**: Resolved an encoding bug in the patch files that caused the Docker build process to fail on Home Assistant.
