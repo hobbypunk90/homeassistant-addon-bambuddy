@@ -40,7 +40,7 @@ diff --git a/backend/app/services/mqtt_relay.py b/backend/app/services/mqtt_rela
  
      async def configure(self, settings: dict) -> bool:
          """Configure MQTT connection from settings.
-@@ -239,6 +240,32 @@
+@@ -239,6 +240,34 @@
              "topic_prefix": self.topic_prefix,
          }
  
@@ -75,7 +75,7 @@ diff --git a/backend/app/services/mqtt_relay.py b/backend/app/services/mqtt_rela
      # =========================================================================
      # Printer Events
      # =========================================================================
-@@ -252,6 +279,24 @@
+@@ -252,6 +279,25 @@
              return  # Skip this update, too soon since last publish
          self._last_printer_status[printer_id] = now
  
@@ -101,7 +101,7 @@ diff --git a/backend/app/services/mqtt_relay.py b/backend/app/services/mqtt_rela
          # Build status payload from PrinterState
          payload = {
              "printer_id": printer_id,
-@@ -258,6 +303,9 @@
+@@ -258,5 +303,8 @@
              "printer_serial": printer_serial,
              "timestamp": datetime.now(timezone.utc).isoformat(),
 +            "obico_active": is_active,
