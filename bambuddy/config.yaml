@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: Bambuddy (DEV)
-version: "0.2.4.5-0.1.4"
+version: "0.2.4.6-0.1.0"
 slug: bambuddy-dev
 stage: experimental
 description: "(DEV) Bambuddy is a powerful, self-hosted print archive and management system for Bambu Lab 3D printers."

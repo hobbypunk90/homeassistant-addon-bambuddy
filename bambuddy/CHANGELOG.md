@@ -4,6 +4,10 @@
 
 All notable changes to the App will be documented in this file.
 
+## [0.2.4.6-0.1.0] - 2026-06-09
+- **Upstream Bump**: Updated base Bambuddy image to `0.2.4.6`.
+- **Slicer APIs Optimized**: Replaced the bulky, source-compiled Dockerfiles for the Orca and Bambu Slicer API add-ons. They now pull directly from the pre-built `ghcr.io/maziggy` images (`orca-slicer-api` and `bambu-studio-api`), eliminating build issues on architectures missing BuildKit/Container Station components.
+
 ## [0.2.4.5-0.1.4] - 2026-06-09
 **⚠️ We strongly recommend creating a full backup before updating, especially if you access your `/share/bambuddy` files from an external device/sync, or if you previously mounted external folders into Bambuddy!**
 

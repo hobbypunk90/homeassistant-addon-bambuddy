@@ -1,5 +1,5 @@
 name: "Bambuddy Slicer API (Orca) (DEV)"
-version: "2.3.2"
+version: "2.3.2-0.2.0"
 stage: experimental
 slug: bambuddy_orca_slicer_api_dev
 description: "(DEV) A headless OrcaSlicer API sidecar container for Bambuddy Auto-Slicing."
