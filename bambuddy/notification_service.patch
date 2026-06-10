@@ -1,0 +1,14 @@
+diff --git a/backend/app/services/notification_service.py b/backend/app/services/notification_service.py
+--- a/backend/app/services/notification_service.py
++++ b/backend/app/services/notification_service.py
+@@ -588,6 +588,10 @@
+         payload = {
+             "title": title,
+             "message": message,
+         }
++        if service and service.startswith("notify."):
++            payload["entity_id"] = service
++            endpoint = "api/services/notify/send_message"
++            url = f"{ha_url.rstrip('/')}/{endpoint}"
+ 
+         client = await self._get_client()

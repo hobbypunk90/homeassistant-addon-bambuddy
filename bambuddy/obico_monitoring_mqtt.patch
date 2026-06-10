@@ -1,0 +1,112 @@
+diff --git a/backend/app/services/obico_detection.py b/backend/app/services/obico_detection.py
+--- a/backend/app/services/obico_detection.py
++++ b/backend/app/services/obico_detection.py
+@@ -87,6 +87,8 @@
+         self._last_class: dict[int, str] = {}
+         # printer_id -> whether an action has already been fired for the current print
+         self._action_fired: dict[int, bool] = {}
++        # printer_id -> whether a failure action was dispatched (persists during pause)
++        self._failure_latched: dict[int, bool] = {}
+         # Global detection event log (most-recent-first)
+         self._history: deque = deque(maxlen=HISTORY_MAX)
+         self._last_error: str | None = None
+@@ -325,6 +327,7 @@
+ 
+         if verdict == "failure" and not self._action_fired.get(printer_id):
+             self._action_fired[printer_id] = True
++            self._failure_latched[printer_id] = True
+             await self._dispatch_action(printer_id, settings["action"], task_name, score, img_with_detections)
+ 
+     async def _dispatch_action(self, printer_id: int, action: str, task_name: str, score: float, image_data: bytes | None = None):
+@@ -344,6 +347,10 @@
+ 
+     # ---- queries ----
+ 
++    def is_monitoring(self, printer_id: int) -> bool:
++        """Return True if the printer is actively being monitored for failure detection."""
++        return printer_id in self._states and self._task is not None and not self._task.done()
++
+     def get_status(self, sensitivity: str = "medium") -> dict:
+         # Report the thresholds for the configured sensitivity, not a hardcoded
+         # "medium" — otherwise the Status panel always shows the medium row
+diff --git a/backend/app/services/mqtt_relay.py b/backend/app/services/mqtt_relay.py
+--- a/backend/app/services/mqtt_relay.py
++++ b/backend/app/services/mqtt_relay.py
+@@ -37,6 +37,7 @@
+         self._smart_plug_service = None  # Lazy import to avoid circular dependency
+         self._settings: dict = {}  # Store settings for smart plug service
+         self._disconnection_event: threading.Event | None = None
++        self._ha_discovery_published = set()
+ 
+     async def configure(self, settings: dict) -> bool:
+         """Configure MQTT connection from settings.
+@@ -239,6 +240,34 @@
+             "topic_prefix": self.topic_prefix,
+         }
+ 
++    def _publish_ha_discovery(self, printer_serial: str, printer_name: str):
++        """Publish Home Assistant MQTT Discovery configuration for Obico ML sensors."""
++        device_info = {
++            "identifiers": [f"bambuddy_{printer_serial}"],
++            "name": printer_name,
++            "manufacturer": "BamBuddy"
++        }
++        
++        sensors = [
++            ("obico_monitoring", "Obico Monitoring", "mdi:cctv"),
++            ("obico_active", "Obico ML Active", "mdi:eye-check"),
++            ("obico_failed", "Obico ML Failure", "mdi:alert-circle"),
++        ]
++        
++        for sensor_id, sensor_name, icon in sensors:
++            topic = f"homeassistant/binary_sensor/bambuddy_{printer_serial}_{sensor_id}/config"
++            payload = {
++                "name": sensor_name,
++                "state_topic": f"{self.topic_prefix}/printers/{printer_serial}/status",
++                "value_template": f"{{{{ 'ON' if value_json.get('{sensor_id}') else 'OFF' }}}}",
++                "payload_on": "ON",
++                "payload_off": "OFF",
++                "unique_id": f"bambuddy_{printer_serial}_{sensor_id}",
++                "device": device_info,
++                "icon": icon
++            }
++            self._publish(topic, payload, retain=True)
++
+     # =========================================================================
+     # Printer Events
+     # =========================================================================
+@@ -252,6 +279,25 @@
+             return  # Skip this update, too soon since last publish
+         self._last_printer_status[printer_id] = now
+ 
++        if printer_serial not in self._ha_discovery_published:
++            self._publish_ha_discovery(printer_serial, printer_name)
++            self._ha_discovery_published.add(printer_serial)
++
++        # Fetch Obico monitoring and failure status
++        from backend.app.services.obico_detection import obico_detection_service
++        is_active = obico_detection_service.is_monitoring(printer_id)
++        
++        has_failed = obico_detection_service._action_fired.get(printer_id, False)
++        if state.state == "PAUSE":
++            # Bambuddy internally flushes states during a pause.
++            # We recover the failure status from our latch to keep it alive during the pause.
++            if obico_detection_service._failure_latched.get(printer_id, False):
++                has_failed = True
++        else:
++            obico_detection_service._failure_latched.pop(printer_id, None)
++
++        is_monitoring = is_active or has_failed
++
+         # Build status payload from PrinterState
+         payload = {
+             "printer_id": printer_id,
+@@ -258,5 +303,8 @@
+             "printer_serial": printer_serial,
+             "timestamp": datetime.now(timezone.utc).isoformat(),
++            "obico_active": is_active,
++            "obico_failed": has_failed,
++            "obico_monitoring": is_monitoring,
+             "connected": state.connected,
+             "state": state.state,
+             "progress": state.progress,

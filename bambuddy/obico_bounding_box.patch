@@ -1,0 +1,153 @@
+diff --git a/backend/app/services/obico_actions.py b/backend/app/services/obico_actions.py
+index 2470245c..af1c7971 100644
+--- a/backend/app/services/obico_actions.py
++++ b/backend/app/services/obico_actions.py
+@@ -13,7 +13,7 @@ from backend.app.models.printer import Printer
+ logger = logging.getLogger(__name__)
+ 
+ 
+-async def execute_action(printer_id: int, action: str, task_name: str, score: float) -> None:
++async def execute_action(printer_id: int, action: str, task_name: str, score: float, image_data: bytes | None = None) -> None:
+     """Run the configured action for a detected print failure.
+ 
+     action: 'notify' | 'pause' | 'pause_and_off'
+@@ -26,7 +26,7 @@ async def execute_action(printer_id: int, action: str, task_name: str, score: fl
+     if action == "pause_and_off":
+         await _turn_off_linked_plugs(printer_id)
+ 
+-    await _notify(printer_id, printer_name, task_name, score, action)
++    await _notify(printer_id, printer_name, task_name, score, action, image_data)
+ 
+ 
+ async def _get_printer_name(printer_id: int) -> str:
+@@ -63,7 +63,7 @@ async def _turn_off_linked_plugs(printer_id: int) -> None:
+                 logger.error("Obico action: failed to turn off plug %s: %s", plug.name, e)
+ 
+ 
+-async def _notify(printer_id: int, printer_name: str, task_name: str, score: float, action: str) -> None:
++async def _notify(printer_id: int, printer_name: str, task_name: str, score: float, action: str, image_data: bytes | None = None) -> None:
+     from backend.app.services.notification_service import notification_service
+ 
+     detail = (
+@@ -78,6 +78,7 @@ async def _notify(printer_id: int, printer_name: str, task_name: str, score: flo
+                 error_type="ai_failure_detection",
+                 db=db,
+                 error_detail=detail,
++                image_data=image_data,
+             )
+         except Exception as e:
+             logger.error("Obico notify failed for printer %s: %s", printer_id, e)
+diff --git a/backend/app/services/obico_detection.py b/backend/app/services/obico_detection.py
+index c97a4456..471bef58 100644
+--- a/backend/app/services/obico_detection.py
++++ b/backend/app/services/obico_detection.py
+@@ -239,41 +239,67 @@ class ObicoDetectionService:
+             self._state_keys[printer_id] = key
+             self._action_fired[printer_id] = False
+ 
+-        # Capture locally first, then hand Obico a nonce URL that returns the
+-        # cached bytes instantly. Obico's ML API is GET-only (/p/?img=URL) with a
+-        # hardcoded 5s read timeout which would otherwise race our /camera/snapshot
+-        # keyframe wait.
++        # Capture locally first. If the Obico ML server supports the /detect/ POST endpoint,
++        # we can send the image directly. Otherwise we fallback to handing it a nonce URL.
+         frame = await self._capture_frame(printer_id)
+         if not frame:
+             self._last_error = f"Failed to capture snapshot for printer {printer_id}"
+             logger.warning(self._last_error)
+             return
+ 
+-        external_url = settings.get("external_url") or ""
+-        if not external_url:
+-            self._last_error = (
+-                "external_url setting is empty — Obico's ML API needs a reachable URL to fetch the snapshot from. "
+-                "Set Settings → General → External URL."
+-            )
++        ml_url_base = settings.get("ml_url", "").rstrip("/")
++        if not ml_url_base:
++            self._last_error = "ml_url setting is empty."
+             logger.warning(self._last_error)
+             return
+ 
+-        nonce = await stash_frame(frame)
+-        snapshot_url = f"{external_url}/api/v1/obico/cached-frame/{nonce}"
+-        ml_url = f"{settings['ml_url']}/p/"
++        detections = []
++        img_with_detections = None
++        detect_success = False
+ 
+         try:
++            import base64
++            img_b64 = base64.b64encode(frame).decode("utf-8")
+             async with httpx.AsyncClient(timeout=DETECTION_TIMEOUT) as client:
+-                resp = await client.get(ml_url, params={"img": snapshot_url})
+-                resp.raise_for_status()
+-                payload = resp.json()
++                detect_url = f"{ml_url_base}/detect/"
++                resp = await client.post(detect_url, json={"img": img_b64, "threshold": settings.get("sensitivity", 0.2)})
++                if resp.status_code == 200:
++                    payload = resp.json()
++                    detections = payload.get("detections", [])
++                    img_with_detections_b64 = payload.get("image_with_detections")
++                    if img_with_detections_b64:
++                        img_with_detections = base64.b64decode(img_with_detections_b64)
++                    detect_success = True
++                else:
++                    logger.debug("POST /detect/ returned %s, falling back to GET /p/", resp.status_code)
+         except Exception as e:
+-            detail = str(e) or type(e).__name__
+-            self._last_error = f"ML API call failed for printer {printer_id}: {detail}"
+-            logger.warning(self._last_error)
+-            return
++            logger.debug("POST /detect/ failed (%s), falling back to GET /p/", e)
++
++        if not detect_success:
++            external_url = settings.get("external_url") or ""
++            if not external_url:
++                self._last_error = (
++                    "external_url setting is empty — Obico's ML API needs a reachable URL to fetch the snapshot from. "
++                    "Set Settings → General → External URL."
++                )
++                logger.warning(self._last_error)
++                return
++
++            nonce = await stash_frame(frame)
++            snapshot_url = f"{external_url}/api/v1/obico/cached-frame/{nonce}"
++            ml_url = f"{ml_url_base}/p/"
+ 
+-        detections = payload.get("detections", []) if isinstance(payload, dict) else []
++            try:
++                async with httpx.AsyncClient(timeout=DETECTION_TIMEOUT) as client:
++                    resp = await client.get(ml_url, params={"img": snapshot_url})
++                    resp.raise_for_status()
++                    payload = resp.json()
++                    detections = payload.get("detections", []) if isinstance(payload, dict) else []
++            except Exception as e:
++                detail = str(e) or type(e).__name__
++                self._last_error = f"ML API call failed for printer {printer_id}: {detail}"
++                logger.warning(self._last_error)
++                return
+         current_p = score_from_detections(detections)
+         state = self._states[printer_id]
+         score = state.update(current_p)
+@@ -300,9 +326,9 @@ class ObicoDetectionService:
+ 
+         if verdict == "failure" and not self._action_fired.get(printer_id):
+             self._action_fired[printer_id] = True
+-            await self._dispatch_action(printer_id, settings["action"], task_name, score)
++            await self._dispatch_action(printer_id, settings["action"], task_name, score, img_with_detections)
+ 
+-    async def _dispatch_action(self, printer_id: int, action: str, task_name: str, score: float):
++    async def _dispatch_action(self, printer_id: int, action: str, task_name: str, score: float, image_data: bytes | None = None):
+         from backend.app.services.obico_actions import execute_action
+ 
+         logger.warning(
+@@ -313,7 +339,7 @@ class ObicoDetectionService:
+             action,
+         )
+         try:
+-            await execute_action(printer_id, action, task_name, score)
++            await execute_action(printer_id, action, task_name, score, image_data=image_data)
+         except Exception as e:
+             self._last_error = f"Action dispatch failed: {e or type(e).__name__}"
+             logger.error(self._last_error)

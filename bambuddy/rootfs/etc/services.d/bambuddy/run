@@ -1,0 +1,169 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Bambuddy add-on entry point
+# ==============================================================================
+
+declare debug
+debug=$(bashio::config 'debug')
+
+SLUG=$(bashio::addon.slug || echo "bambuddy")
+if [[ "${SLUG}" == *"dev"* ]]; then
+    SHARE_DIR="/share/bambuddy-dev"
+else
+    SHARE_DIR="/share/bambuddy"
+fi
+bashio::log.info "Using share directory: ${SHARE_DIR}"
+
+bashio::log.info 'Setting up data directories'
+
+mkdir -p /config/data
+mkdir -p /config/logs
+
+mkdir -p ${SHARE_DIR}/archive
+mkdir -p ${SHARE_DIR}/virtual_printer
+mkdir -p ${SHARE_DIR}/backups
+mkdir -p ${SHARE_DIR}/firmware
+
+if [ -d ${SHARE_DIR}/data ]; then
+  bashio::log.info "Migrating data from old ${SHARE_DIR}/data structure..."
+  
+  if ls ${SHARE_DIR}/data/bambuddy.db* 1> /dev/null 2>&1; then
+    mv ${SHARE_DIR}/data/bambuddy.db* /config/data/ 2>/dev/null || true
+  fi
+  
+  if [ -d ${SHARE_DIR}/data/archive ]; then
+    cp -r ${SHARE_DIR}/data/archive/* ${SHARE_DIR}/archive/ 2>/dev/null || true
+  fi
+  
+  if [ -d ${SHARE_DIR}/data/virtual_printer ]; then
+    cp -r ${SHARE_DIR}/data/virtual_printer/* ${SHARE_DIR}/virtual_printer/ 2>/dev/null || true
+  fi
+  
+  if [ -d ${SHARE_DIR}/data/backups ]; then
+    cp -r ${SHARE_DIR}/data/backups/* ${SHARE_DIR}/backups/ 2>/dev/null || true
+  fi
+  
+  if [ -d ${SHARE_DIR}/data/firmware ]; then
+    cp -r ${SHARE_DIR}/data/firmware/* ${SHARE_DIR}/firmware/ 2>/dev/null || true
+  fi
+  
+  mv ${SHARE_DIR}/data/* /config/data/ 2>/dev/null || true
+  
+  if [ -d ${SHARE_DIR}/logs ]; then
+    mv ${SHARE_DIR}/logs/* /config/logs/ 2>/dev/null || true
+    rm -rf ${SHARE_DIR}/logs
+  fi
+  if [ -f /config/data/bambuddy.db ]; then
+    bashio::log.info "Migration successful. Cleaning up old data directory..."
+    rm -rf ${SHARE_DIR}/data
+  else
+    bashio::log.warning "Migration may have been incomplete. Renaming old data directory to data.bak for safety."
+    mv ${SHARE_DIR}/data ${SHARE_DIR}/data.bak 2>/dev/null || true
+  fi
+fi
+
+rm -rf /config/data/archive
+rm -rf /config/data/virtual_printer
+rm -rf /config/data/backups
+rm -rf /config/data/firmware
+
+ln -s ${SHARE_DIR}/archive /config/data/archive
+ln -s ${SHARE_DIR}/virtual_printer /config/data/virtual_printer
+ln -s ${SHARE_DIR}/backups /config/data/backups
+ln -s ${SHARE_DIR}/firmware /config/data/firmware
+
+rm -rf /app/data
+rm -rf /app/logs
+ln -s /config/data /app/data
+ln -s /config/logs /app/logs
+
+cd /app
+
+if [ "${debug}" = "true" ]; then
+  bashio::log.info 'Enabling debug mode'
+  export DEBUG=true
+fi
+
+if bashio::config.has_value 'preferred_slicer'; then
+  export PREFERRED_SLICER=$(bashio::config 'preferred_slicer')
+  bashio::log.info "Preferred Slicer set to: ${PREFERRED_SLICER}"
+else
+  export PREFERRED_SLICER="bambu_studio"
+fi
+
+if [ "${PREFERRED_SLICER}" = "orcaslicer" ]; then
+  if bashio::config.has_value 'orcaslicer_api_url'; then
+    url=$(bashio::config 'orcaslicer_api_url')
+    if [[ ! "$url" =~ ^https?:// ]]; then
+      url="http://$url"
+    fi
+    export SLICER_API_URL="$url"
+    bashio::log.info "OrcaSlicer API URL mapped to SLICER_API_URL: ${SLICER_API_URL}"
+  fi
+else
+  if bashio::config.has_value 'bambu_studio_api_url'; then
+    url=$(bashio::config 'bambu_studio_api_url')
+    if [[ ! "$url" =~ ^https?:// ]]; then
+      url="http://$url"
+    fi
+    export SLICER_API_URL="$url"
+    bashio::log.info "Bambu Studio API URL mapped to SLICER_API_URL: ${SLICER_API_URL}"
+  fi
+fi
+
+if bashio::config.has_value 'mfa_encryption_key'; then
+  export MFA_ENCRYPTION_KEY=$(bashio::config 'mfa_encryption_key')
+  bashio::log.info "MFA Encryption Key configured"
+fi
+
+if bashio::config.has_value 'database_url'; then
+  export DATABASE_URL=$(bashio::config 'database_url')
+  bashio::log.info "External Postgres database URL configured"
+fi
+
+# --- MQTT Configuration ---
+# MQTT configuration is handled either via Home Assistant Supervisor auto-discovery
+# or configured directly within the Bambuddy UI. We no longer rely on add-on config options.
+
+# Auto-discover MQTT from supervisor
+if bashio::services.available 'mqtt'; then
+  bashio::log.info "Auto-discovering MQTT credentials from Home Assistant Supervisor..."
+  export MQTT_ENABLED="true"
+  export MQTT_BROKER=$(bashio::services mqtt "host")
+  export MQTT_PORT=$(bashio::services mqtt "port")
+  export MQTT_USERNAME=$(bashio::services mqtt "username")
+  export MQTT_PASSWORD=$(bashio::services mqtt "password")
+  if [ "$(bashio::services mqtt "ssl")" = "true" ]; then
+    export MQTT_USE_TLS="true"
+  else
+    export MQTT_USE_TLS="false"
+  fi
+fi
+
+if bashio::config.has_value 'virtual_printer_pasv_address'; then
+  export VIRTUAL_PRINTER_PASV_ADDRESS=$(bashio::config 'virtual_printer_pasv_address')
+  bashio::log.info "Virtual Printer Passive Address set to: ${VIRTUAL_PRINTER_PASV_ADDRESS}"
+fi
+
+if bashio::config.has_value 'obico_ml_url'; then
+  url=$(bashio::config 'obico_ml_url')
+  if [[ ! "$url" =~ ^https?:// ]]; then
+    url="http://$url"
+  fi
+  export OBICO_ML_URL="$url"
+  bashio::log.info "Obico ML URL set to: ${OBICO_ML_URL}"
+fi
+
+if bashio::config.has_value 'bambuddy_external_roots'; then
+  export BAMBUDDY_EXTERNAL_ROOTS=$(bashio::config 'bambuddy_external_roots')
+  bashio::log.info "External roots allowlist configured: ${BAMBUDDY_EXTERNAL_ROOTS}"
+fi
+
+bashio::log.info 'Synchronizing settings to database...'
+python3 /app/scripts/init_settings.py
+
+export HA_URL="http://supervisor/core"
+export HA_TOKEN="${SUPERVISOR_TOKEN}"
+
+bashio::log.info 'Start Bambuddy ...'
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio

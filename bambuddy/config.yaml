@@ -1,0 +1,42 @@
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
+name: Bambuddy
+version: "0.2.4.6.2"
+slug: bambuddy
+stage: experimental
+description: "(DEV) Bambuddy is a powerful, self-hosted print archive and management system for Bambu Lab 3D printers."
+url: "https://github.com/connormxy/homeassistant-addon-bambuddy"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+init: false
+hassio_role: homeassistant
+privileged:
+  - NET_RAW
+homeassistant_api: true
+options:
+  debug: false
+  orcaslicer_api_url: "http://127.0.0.1:3003"
+  bambu_studio_api_url: "http://127.0.0.1:3001"
+  preferred_slicer: "bambu_studio"
+  obico_ml_url: ""
+schema:
+  debug: bool
+  orcaslicer_api_url: str?
+  bambu_studio_api_url: str?
+  preferred_slicer: list(bambu_studio|orcaslicer)?
+  mfa_encryption_key: password?
+  database_url: password?
+  virtual_printer_pasv_address: str?
+  obico_ml_url: str?
+  bambuddy_external_roots: str?
+map:
+  - addon_config:rw
+  - share:rw
+services:
+  - mqtt:want
+host_network: true
+webui: http://[HOST]:[PORT:8000]
+watchdog: http://[HOST]:[PORT:8000]/health

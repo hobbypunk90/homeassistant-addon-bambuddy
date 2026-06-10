@@ -1,0 +1,15 @@
+name: "Bambuddy Slicer API (Bambu)"
+version: "02.07.01.57.1"
+slug: bambuddy_bambu_studio_api
+stage: experimental
+description: "(DEV) A headless Bambu Studio API sidecar container for Bambuddy Auto-Slicing."
+url: "https://github.com/connormxy/homeassistant-addon-bambuddy"
+arch:
+  - amd64
+init: false
+map:
+  - share:rw
+ports:
+  3001/tcp: 3001
+ports_description:
+  3001/tcp: Bambu Studio API Port (use this in Bambuddy settings)
