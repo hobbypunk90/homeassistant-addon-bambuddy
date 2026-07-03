@@ -4,6 +4,10 @@
 
 All notable changes to the App will be documented in this file.
 
+## [0.2.4.8-1] - 2026-07-03
+
+- Bump bambuddy to 0.2.4.6
+
 ## [0.2.4.6-1] - 2026-06-12
 
 - Bump bambuddy to 0.2.4.6
