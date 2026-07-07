@@ -16,7 +16,7 @@ RUN apk add --no-cache \
 
 # Install Python dependencies with cache mount
 COPY --from=builder /app/requirements.txt ./
-RUN sed -i 's/opencv-python-headless/# opencv-python-headless/' /app/requirements.txt
+#RUN sed -i 's/opencv-python-headless/# opencv-python-headless/' /app/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
   pip install --root-user-action=ignore -r requirements.txt
 
